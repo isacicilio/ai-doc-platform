@@ -1,11 +1,27 @@
+# Web
 fastapi
 uvicorn[standard]
 python-multipart
+
+# Config / validação
+pydantic
 pydantic-settings
+python-dotenv
+
+# Banco
 sqlalchemy
 psycopg2-binary
 pgvector
+
+# Leitura de PDF
+pypdf
+
+# HTTP (Ollama e chamadas genéricas)
+httpx
+
+# Providers de LLM
+anthropic
+openai
+
+# Embeddings locais (opcional, é pesado: puxa o torch)
 sentence-transformers
-ollama
-pymupdf
-python-docx
