@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Segredos e ambiente
+.env
+*.key
+
+# Uploads e modelos locais
+uploads/
+*.gguf
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
