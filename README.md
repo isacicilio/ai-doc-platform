@@ -256,7 +256,7 @@ Este projeto foi construído como peça de portfólio para a área de **AI Engin
 Estudante de Ciência da Computação · Tecnologia · Inteligência Artificial
 
 [![GitHub](https://img.shields.io/badge/GitHub-isacicilio-181717?style=flat-square&logo=github)](https://github.com/isacicilio)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Isabela%20Cicilio-0A66C2?style=flat-square&logo=linkedin)](www.linkedin.com/in/isacicilio/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Isabela%20Cicilio-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/isacicilio)
 
 <br>
 
