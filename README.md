@@ -14,7 +14,7 @@
 ![pgvector](https://img.shields.io/badge/pgvector-000000?style=for-the-badge&logo=databricks&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow?style=flat-square)
+![Status](https://img.shields.io/badge/status-MVP%20funcional-success?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Providers](https://img.shields.io/badge/LLM-OpenAI%20%7C%20Claude%20%7C%20Ollama-blueviolet?style=flat-square)
 
@@ -40,6 +40,18 @@ Em vez de procurar informação manualmente (um `Ctrl+F` glorificado que só ach
 - 🧩 **Chunking inteligente** — divide o texto respeitando fronteiras naturais (parágrafos e frases) para preservar o sentido.
 - 📌 **Respostas rastreáveis** — cada resposta indica de quais trechos do documento ela foi extraída.
 - 🐘 **Banco vetorial de verdade** — PostgreSQL com a extensão **pgvector** para busca vetorial eficiente diretamente no banco.
+- 🌐 **API REST com FastAPI** — endpoints para upload, perguntas e consulta, com documentação interativa automática (Swagger UI).
+- 🐳 **Sobe com um comando** — toda a stack (API + banco) orquestrada via Docker Compose; roda igual em qualquer máquina.
+
+---
+
+## 🖼️ Arquitetura
+
+<div align="center">
+
+![Arquitetura da AI Document Intelligence Platform](docs/architecture.png)
+
+</div>
 
 ---
 
@@ -97,6 +109,36 @@ Isso é o **RAG — Retrieval-Augmented Generation**:
 
 ---
 
+## 🔌 API
+
+Depois de subir o projeto, a documentação interativa (Swagger UI) fica disponível em **`http://localhost:8000/docs`** — dá para testar todos os endpoints direto no navegador, sem precisar de terminal.
+
+| Método | Rota | Descrição |
+|:---|:---|:---|
+| `POST` | `/documents` | Envia um PDF e dispara o pipeline de ingestão |
+| `POST` | `/ask` | Faz uma pergunta e recebe a resposta + as fontes |
+| `GET` | `/documents` | Lista os documentos já enviados |
+| `GET` | `/documents/{id}` | Consulta o status de um documento específico |
+
+**Exemplo — perguntando ao documento:**
+
+```bash
+curl -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "o que é um banco de dados vetorial?"}'
+```
+
+```json
+{
+  "answer": "Um banco de dados vetorial é uma base de dados que busca por similaridade...",
+  "sources": [
+    { "chunk_index": 6, "document_id": 1, "preview": "..." }
+  ]
+}
+```
+
+---
+
 ## 📂 Estrutura do projeto
 
 ```
@@ -113,11 +155,11 @@ ai-doc-platform/
 │   │   │
 │   │   ├── providers/           # 🔌 Arquitetura de providers trocáveis
 │   │   │   ├── base.py          # Interfaces abstratas (LLM e Embedding)
-│   │   │   ├── openai_llm.py     # LLM via OpenAI
-│   │   │   ├── claude_llm.py     # LLM via Claude (Anthropic)
-│   │   │   ├── ollama_llm.py     # LLM local via Ollama
-│   │   │   ├── openai_embeddings.py   # Embeddings via OpenAI
-│   │   │   ├── local_embeddings.py    # Embeddings locais (offline)
+│   │   │   ├── openai_llm.py         # LLM via OpenAI
+│   │   │   ├── claude_llm.py         # LLM via Claude (Anthropic)
+│   │   │   ├── ollama_llm.py         # LLM local via Ollama
+│   │   │   ├── openai_embeddings.py  # Embeddings via OpenAI
+│   │   │   ├── local_embeddings.py   # Embeddings locais (offline)
 │   │   │   └── factory.py       # Seleciona o provider conforme o .env
 │   │   │
 │   │   ├── services/
@@ -128,13 +170,17 @@ ai-doc-platform/
 │   │   │   ├── retrieval.py     # Busca vetorial (similaridade de cosseno)
 │   │   │   └── rag.py           # Orquestração do RAG
 │   │   │
-│   │   └── api/                 # Rotas da API (em construção)
+│   │   └── api/                 # 🌐 Camada de API (FastAPI)
+│   │       ├── routes.py        # Rotas: upload, ask, list, status
+│   │       └── schemas.py       # Contratos de entrada e saída (Pydantic)
 │   │
+│   ├── Dockerfile               # Receita da imagem do backend
+│   ├── .dockerignore
 │   ├── requirements.txt
 │   └── .env.example
 │
 ├── frontend/                    # Interface do usuário (em construção)
-├── docker-compose.yml           # Serviço do banco (pgvector)
+├── docker-compose.yml           # Orquestra backend + banco (pgvector)
 └── README.md
 ```
 
@@ -142,49 +188,49 @@ ai-doc-platform/
 
 ## 🚀 Como rodar
 
-> **Pré-requisitos:** [Docker Desktop](https://www.docker.com/products/docker-desktop/), [Python 3.11+](https://www.python.org/) e — para o modo local gratuito — [Ollama](https://ollama.com/download).
+> **Pré-requisitos:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) e — para o modo local gratuito — [Ollama](https://ollama.com/download) instalado e em execução na sua máquina.
 
-### 1. Clone o repositório
+### 🐳 Opção 1 — Com Docker (recomendado)
+
+Sobe a **aplicação inteira** (API + banco vetorial) de uma vez. As tabelas são criadas automaticamente na primeira execução.
 
 ```bash
+# 1. Clone o repositório
 git clone https://github.com/isacicilio/ai-doc-platform.git
 cd ai-doc-platform
+
+# 2. (Modo local) baixe o modelo no Ollama, que roda na sua máquina
+ollama pull llama3.2
+
+# 3. Suba tudo com um comando
+docker compose up --build
 ```
 
-### 2. Suba o banco de dados
+Pronto! Acesse a documentação interativa em **http://localhost:8000/docs**.
+
+> ℹ️ No modo local, o Ollama roda **nativo na sua máquina** (fora do Docker) e o container o alcança via `host.docker.internal` — já configurado no `docker-compose.yml`. A primeira execução baixa o PyTorch e o modelo de embeddings, então demora um pouco; as seguintes são rápidas.
+
+### 🐍 Opção 2 — Desenvolvimento local (com hot-reload)
+
+Ideal para desenvolver, com recarregamento automático a cada alteração no código.
 
 ```bash
-docker compose up -d
-```
+# 1. Suba apenas o banco
+docker compose up -d db
 
-### 3. Configure o ambiente Python
-
-```bash
+# 2. Ambiente Python
 cd backend
 python -m venv .venv
-
-# Windows (PowerShell)
-.\.venv\Scripts\Activate.ps1
-# Linux / macOS
-# source .venv/bin/activate
-
+.\.venv\Scripts\Activate.ps1     # Windows (PowerShell)
+# source .venv/bin/activate      # Linux / macOS
 pip install -r requirements.txt
-```
 
-### 4. Configure as variáveis de ambiente
-
-Crie um arquivo `.env` dentro de `backend/` a partir do modelo:
-
-```bash
-cp .env.example .env
-```
-
-Ajuste conforme o provider desejado (veja a seção **Configuração** abaixo).
-
-### 5. Inicialize o banco
-
-```bash
+# 3. Configure o ambiente e inicialize o banco
+cp .env.example .env             # ajuste conforme a seção "Configuração"
 python -m app.init_db
+
+# 4. Suba a API com hot-reload
+uvicorn app.main:app --reload
 ```
 
 ---
@@ -228,10 +274,10 @@ O projeto está sendo construído em blocos, na ordem de dependências:
 - [x] **Bloco 2** — Banco de dados com pgvector
 - [x] **Bloco 3** — Providers de LLM e embeddings
 - [x] **Bloco 4** — Ingestão (PDF → chunks vetorizados)
-- [ ] **Bloco 5** — Core RAG (busca semântica + geração) &nbsp;🚧 *em andamento*
-- [ ] **Bloco 6** — API (rotas e endpoints)
-- [ ] **Bloco 7** — Orquestração completa via Docker
-- [ ] **Bloco 8** — Frontend e DevOps
+- [x] **Bloco 5** — Core RAG (busca semântica + geração)
+- [x] **Bloco 6** — API (rotas e endpoints com FastAPI)
+- [x] **Bloco 7** — Orquestração completa via Docker
+- [ ] **Bloco 8** — Frontend e DevOps &nbsp;🚧 *em andamento*
 
 ---
 
@@ -242,6 +288,8 @@ Este projeto foi construído como peça de portfólio para a área de **AI Engin
 - **RAG (Retrieval-Augmented Generation)** implementado do zero, entendendo cada etapa
 - **Bancos vetoriais** e busca por similaridade semântica
 - **Arquitetura desacoplada** com o padrão de providers plugáveis (*dependency injection* e *factory*)
+- **API REST** com FastAPI, validação por schemas e documentação automática
+- **Containerização e orquestração** com Docker e Docker Compose
 - **Engenharia de software** — separação de responsabilidades, configuração centralizada, tratamento de erros
 - **Mitigação de alucinação** ancorando o modelo no contexto recuperado
 
