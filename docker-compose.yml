@@ -9,6 +9,38 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Healthcheck: o backend só sobe DEPOIS que o banco estiver pronto pra
+    # aceitar conexões. Sem isso, o backend tentaria conectar cedo demais e falharia.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aidocs"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend          # usa o backend/Dockerfile que você acabou de criar
+    env_file:
+      - ./backend/.env        # carrega TODA a sua config (provider, modelo, dim...)
+    environment:
+      # Virada 1 — o banco: dentro do Docker ele se chama 'db', não 'localhost'.
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/aidocs
+      # Virada 2 — o Ollama: roda NATIVO no Windows (fora do Docker). O container
+      # alcança a sua máquina real pelo endereço mágico 'host.docker.internal'.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Necessário no Linux pra 'host.docker.internal' funcionar (no Windows/Mac
+    # já funciona sozinho, mas deixar aqui torna o projeto portátil).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Ao subir: cria as tabelas (idempotente — só cria o que falta) e liga a API.
+    # É isso que faz o projeto rodar do ZERO na máquina de qualquer recrutador.
+    command: >
+      sh -c "python -m app.init_db &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
 volumes:
   pgdata:

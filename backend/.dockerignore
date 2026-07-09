@@ -1,0 +1,16 @@
+# Ambiente virtual — enorme e específico da sua máquina (a imagem tem o seu próprio Python)
+.venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Segredos: o .env NÃO entra na imagem. A config vai chegar por outro caminho
+# (variáveis de ambiente no compose) — explico já já.
+.env
+
+# Git e testes temporários não precisam ir pra imagem
+.git/
+.gitignore
+test_*.py
